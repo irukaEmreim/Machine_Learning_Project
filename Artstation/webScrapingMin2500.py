@@ -47,6 +47,7 @@ def scrape_until_min_links(url, stil_adi, min_links=2500):
 
     driver.quit()
 
+    ## Linkler klasöründen artstation_links dosyası oluştur
     os.makedirs("linkler", exist_ok=True)
     safe_name = stil_adi.lower().replace(" ", "_")
     with open(f"linkler/artstation_links_{safe_name}.json", "w", encoding="utf-8") as f:
