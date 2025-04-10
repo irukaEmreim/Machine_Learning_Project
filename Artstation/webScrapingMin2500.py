@@ -47,9 +47,9 @@ def scrape_until_min_links(url, stil_adi, min_links=2500):
 
     driver.quit()
 
-    os.makedirs("veri", exist_ok=True)
+    os.makedirs("linkler", exist_ok=True)
     safe_name = stil_adi.lower().replace(" ", "_")
-    with open(f"veri/artstation_links_{safe_name}.json", "w", encoding="utf-8") as f:
+    with open(f"linkler/artstation_links_{safe_name}.json", "w", encoding="utf-8") as f:
         json.dump(list(links), f, indent=2)
 
     print(f"✅ [{stil_adi}] için toplam {len(links)} görsel bağlantısı kaydedildi.")

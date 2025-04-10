@@ -63,7 +63,7 @@ import time
 import requests
 def download_artstation_images(json_path, style_name, max_images=50):
     # JSON yolunu projeye göre ayarla
-    json_full_path = os.path.join("veri", json_path)
+    json_full_path = os.path.join("linkler", json_path)
 
     # Görsellerin kaydedileceği klasör
     save_dir = os.path.join("gorseller", style_name)
