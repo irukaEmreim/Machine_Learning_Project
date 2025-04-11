@@ -84,6 +84,8 @@ from selenium.webdriver.chrome.options import Options
 from webdriver_manager.chrome import ChromeDriverManager
 import json
 import time
+import random
+import os
 
 stil_linkleri = {
     "anime": "https://www.deviantart.com/search?q=anime",
@@ -95,21 +97,21 @@ stil_linkleri = {
     "digital_realism": "https://www.deviantart.com/search?q=digital+realism"
 }
 
+user_agent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/123.0.0.0 Safari/537.36"
+
 def get_artwork_links(driver):
     links = set()
-
-    # Sadece ilgili div'lerin içindeki <a> tag'lerini al
     containers = driver.find_elements(By.CSS_SELECTOR, 'div._3Y0hT._3oBlM')
     for container in containers:
-        a_tag = container.find_element(By.TAG_NAME, "a")
-        href = a_tag.get_attribute("href")
-
-        # Yorum sayfalarını filtrele (#comments içerenleri alma)
-        if "#comments" not in href:
-            links.add(href)
-
+        try:
+            a_tag = container.find_element(By.TAG_NAME, "a")
+            href = a_tag.get_attribute("href")
+            if href and "#comments" not in href:
+                links.add(href)
+            time.sleep(random.uniform(0.2, 0.6))
+        except:
+            continue
     return list(links)
-
 
 def go_to_next_page(driver):
     try:
@@ -117,37 +119,51 @@ def go_to_next_page(driver):
         href = next_link.get_attribute("href")
         if href:
             driver.get(href)
-            time.sleep(2)
+            time.sleep(random.uniform(1.0, 2.5))
             return True
     except Exception as e:
         print("➡️ Sonraki sayfa bulunamadı:", e)
     return False
 
-def scrape_deviantart_links(stil_adi, stil_url, max_pages=5):
-    print(f"🔍 Stil işleniyor: {stil_adi}")
+def scrape_deviantart_links(stil_adi, stil_url, min_links=1500):
+    print(f"\n🔍 Stil işleniyor: {stil_adi}")
     options = Options()
+    options.add_argument("--headless=new")
+    options.add_argument("--disable-gpu")
     options.add_argument("--window-size=1920,1080")
+    options.add_argument(f"user-agent={user_agent}")
     driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=options)
 
     driver.get(stil_url)
-    time.sleep(3)
+    time.sleep(random.uniform(1.0, 3.0))
 
-    all_links = []
+    all_links = set()
+    page_num = 0
 
-    for _ in range(max_pages):
+    while len(all_links) < min_links:
         page_links = get_artwork_links(driver)
-        print(f"✅ {len(page_links)} link bulundu.")
-        all_links.extend(page_links)
+        print(f"📄 Sayfa {page_num}: {len(page_links)} link bulundu. Toplam: {len(all_links)}")
+        all_links.update(page_links)
+        page_num += 1
+
         if not go_to_next_page(driver):
+            print(f"⚠️ Sonraki sayfa yok. {len(all_links)} link ile durduruldu.")
             break
 
     driver.quit()
 
-    # JSON dosyasına kaydet
-    with open(f"deviantart_links_{stil_adi}.json", "w", encoding="utf-8") as f:
-        json.dump(all_links, f, ensure_ascii=False, indent=2)
-    print(f"💾 {stil_adi} için {len(all_links)} link kaydedildi.\n")
+    # Kayıt klasörü
+    output_dir = os.path.join("deviantart_images", "linkler")
+    os.makedirs(output_dir, exist_ok=True)
 
-# Tüm stiller için çalıştır
+    # Dosya yolu
+    json_path = os.path.join(output_dir, f"deviantart_links_{stil_adi}.json")
+    with open(json_path, "w", encoding="utf-8") as f:
+        json.dump(list(all_links), f, ensure_ascii=False, indent=2)
+
+    print(f"💾 {stil_adi} için toplam {len(all_links)} link kaydedildi: {json_path}\n")
+
+
+# 🔁 Tüm stiller için çalıştır
 for stil, link in stil_linkleri.items():
-    scrape_deviantart_links(stil, link, max_pages=2)
+    scrape_deviantart_links(stil, link, min_links=2000)
